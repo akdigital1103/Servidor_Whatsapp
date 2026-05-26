@@ -8,30 +8,44 @@ import httpx
 
 app = FastAPI()
 
-# 1. Inicializar Supabase con variables de entorno de Render
-supabase: Client = create_client(os.getenv("SUPABASE_URL"), os.getenv("SUPABASE_KEY"))
+# 1. Cargar variables desde el entorno de Render
+SUPABASE_URL = os.getenv("SUPABASE_URL")
+SUPABASE_KEY = os.getenv("SUPABASE_KEY")
+META_TOKEN = os.getenv("META_TOKEN")
+PHONE_NUMBER_ID = os.getenv("PHONE_NUMBER_ID")
+CALENDAR_ID = os.getenv("CALENDAR_ID")
+GOOGLE_CREDS_RAW = os.getenv("GOOGLE_CREDS_JSON")
 
-# 2. Inicializar Google Calendar de forma segura desde la variable de entorno
+# Logs de control inicial (flush=True obliga a Render a mostrarlos ya)
+print("=== VERIFICACIÓN DE VARIABLES EN RENDER ===", flush=True)
+print(f"SUPABASE_URL: {'OK' if SUPABASE_URL else 'FALTA ❌'}", flush=True)
+print(f"SUPABASE_KEY: {'OK' if SUPABASE_KEY else 'FALTA ❌'}", flush=True)
+print(f"META_TOKEN: {'OK' if META_TOKEN else 'FALTA ❌'}", flush=True)
+print(f"PHONE_NUMBER_ID: {'OK' if PHONE_NUMBER_ID else 'FALTA ❌'}", flush=True)
+print(f"CALENDAR_ID: {'OK' if CALENDAR_ID else 'FALTA ❌'}", flush=True)
+print(f"GOOGLE_CREDS_JSON: {'OK' if GOOGLE_CREDS_RAW else 'FALTA ❌'}", flush=True)
+
+# Inicializar clientes
+supabase: Client = create_client(SUPABASE_URL, SUPABASE_KEY) if SUPABASE_URL and SUPABASE_KEY else None
+
 SCOPES = ['https://www.googleapis.com/auth/calendar']
-google_creds_raw = os.getenv("GOOGLE_CREDS_JSON")
+calendar_service = None
+if GOOGLE_CREDS_RAW:
+    try:
+        creds_info = json.loads(GOOGLE_CREDS_RAW)
+        creds = Credentials.from_service_account_info(creds_info, scopes=SCOPES)
+        calendar_service = build('calendar', 'v3', credentials=creds)
+    except Exception as e:
+        print(f"ERROR CONFIGURANDO GOOGLE CALENDAR: {e}", flush=True)
 
-if not google_creds_raw:
-    print("ERROR CRÍTICO: No se encontró la variable GOOGLE_CREDS_JSON en Render")
-    creds = None
-    calendar_service = None
-else:
-    creds_info = json.loads(google_creds_raw)
-    creds = Credentials.from_service_account_info(creds_info, scopes=SCOPES)
-    calendar_service = build('calendar', 'v3', credentials=creds)
-
-# 3. Configuraciones globales (Asegúrate de tenerlas en Environment de Render o pégalas aquí)
-CALENDAR_ID = "TU_ID_DE_CALENDARIO_DE_GOOGLE" # Ej: tu_correo@gmail.com
-PHONE_NUMBER_ID = "TU_PHONE_NUMBER_ID_DE_META"
-META_TOKEN = os.getenv("META_TOKEN", "TU_TOKEN_DE_META_POR_SI_NO_USAS_ENV")
-
-URL_META_SEND = f"https://graph.facebook.com/v19.0/{PHONE_NUMBER_ID}/messages"
+# Construir la URL dinámica de Meta
+URL_META_SEND = f"https://graph.facebook.com/v19.0/{PHONE_NUMBER_ID}/messages" if PHONE_NUMBER_ID else ""
 
 async def enviar_wpp(to: str, texto: str):
+    if not URL_META_SEND or not META_TOKEN:
+        print("❌ ERROR: No se puede enviar el mensaje. Faltan credenciales de Meta en Render.", flush=True)
+        return
+
     headers = {
         "Authorization": f"Bearer {META_TOKEN}", 
         "Content-Type": "application/json"
@@ -42,15 +56,17 @@ async def enviar_wpp(to: str, texto: str):
         "type": "text", 
         "text": {"body": texto}
     }
+    
     async with httpx.AsyncClient() as client:
+        print(f"➡️ Intentando enviar mensaje a Meta para el número: {to}...", flush=True)
         response = await client.post(URL_META_SEND, json=payload, headers=headers)
+        print(f"↩️ Respuesta de Meta API (Status Code: {response.status_code})", flush=True)
         if response.status_code != 200:
-            print(f"Error enviando a Meta: {response.text}")
+            print(f"🚨 DETALLE DEL ERROR DE META: {response.text}", flush=True)
 
 @app.get("/webhook")
 async def verificar_token(request: Request):
     params = request.query_params
-    # Reemplaza 'cusco_api_token_2026' con el token de verificación que pusiste en el panel de Meta
     if params.get("hub.mode") == "subscribe" and params.get("hub.verify_token") == "cusco_api_token_2026":
         return Response(content=params.get("hub.challenge"), media_type="text/plain")
     return Response(content="Token inválido", status_code=403)
@@ -58,8 +74,9 @@ async def verificar_token(request: Request):
 @app.post("/webhook")
 async def webhook(request: Request):
     payload = await request.json()
-    print("--- RESTRICCIÓN: PAYLOAD ENTRANTE DESDE META ---")
-    print(json.dumps(payload, indent=2))
+    print("--- PAYLOAD ENTRANTE DESDE META ---", flush=True)
+    print(json.dumps(payload, indent=2), flush=True)
+    
     try:
         value = payload["entry"][0]["changes"][0]["value"]
         if "messages" in value:
@@ -67,23 +84,36 @@ async def webhook(request: Request):
             phone = msg["from"]
             text = msg["text"]["body"].strip()
 
+            print(f"📝 Procesando texto '{text}' del usuario {phone}", flush=True)
+
+            if not supabase:
+                print("❌ Base de datos no inicializada.", flush=True)
+                return {"status": "error_db"}
+
             # Buscar o Crear Cliente en Supabase
             res = supabase.table("clientes").select("*").eq("telefono", phone).execute()
             if not res.data:
+                print(f"👤 Cliente nuevo detectado. Insertando {phone} en Supabase...", flush=True)
                 res = supabase.table("clientes").insert({"telefono": phone, "estado_conversacion": "NUEVO"}).execute()
             
             cliente = res.data[0]
             estado = cliente["estado_conversacion"]
+            print(f"🔄 Estado actual del cliente en DB: {estado}", flush=True)
 
-            # Máquina de Estados (Lógica del Flujo)
+            # Máquina de Estados
             if estado == "NUEVO":
                 supabase.table("clientes").update({"nombre": text, "estado_conversacion": "ELIGIENDO_FECHA"}).eq("telefono", phone).execute()
-                await enviar_wpp(phone, f"¡Gracias {text}! ¿Qué día te gustaría agendar? Escribe la fecha en formato: AAAA-MM-DD (Ejemplo: 2026-05-28)")
+                await enviar_wpp(phone, f"¡Gracias por escribirnos! ¿Qué día te gustaría agendar? Escribe la fecha en formato: AAAA-MM-DD (Ejemplo: 2026-06-15)")
             
             elif estado == "ELIGIENDO_FECHA":
-                fecha_solicitada = text
+                if not calendar_service:
+                    print("❌ Google Calendar no está disponible.", flush=True)
+                    await enviar_wpp(phone, "Lo siento, el sistema de agenda está en mantenimiento.")
+                    return {"status": "error_calendar"}
                 
-                # Insertar en Google Calendar de forma directa
+                fecha_solicitada = text
+                print(f"📅 Intentando insertar cita en Google Calendar para el: {fecha_solicitada}", flush=True)
+                
                 evento = {
                     'summary': f'Cita Dental: {cliente["nombre"]}',
                     'start': {'dateTime': f'{fecha_solicitada}T10:00:00', 'timeZone': 'America/Lima'},
@@ -91,8 +121,8 @@ async def webhook(request: Request):
                 }
                 
                 ev_res = calendar_service.events().insert(calendarId=CALENDAR_ID, body=evento).execute()
+                print("✅ Evento creado con éxito en Google Calendar", flush=True)
                 
-                # Guardar Cita en Supabase y resetear estado de conversación
                 supabase.table("citas").insert({
                     "cliente_id": cliente["id"], 
                     "fecha_hora": f"{fecha_solicitada} 10:00:00", 
@@ -100,7 +130,6 @@ async def webhook(request: Request):
                 }).execute()
                 
                 supabase.table("clientes").update({"estado_conversacion": "AGENDADO"}).eq("telefono", phone).execute()
-                
                 await enviar_wpp(phone, f"¡Listo! Tu cita ha sido agendada para el {fecha_solicitada} a las 10:00 AM. ¡Te esperamos!")
             
             elif estado == "AGENDADO":
@@ -108,5 +137,5 @@ async def webhook(request: Request):
                 
         return {"status": "ok"}
     except Exception as e:
-        print(f"Error en ejecución del webhook: {e}")
+        print(f"💥 ERROR EN EJECUCIÓN DEL WEBHOOK: {e}", flush=True)
         return Response(content=str(e), status_code=500)
