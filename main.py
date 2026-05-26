@@ -58,6 +58,8 @@ async def verificar_token(request: Request):
 @app.post("/webhook")
 async def webhook(request: Request):
     payload = await request.json()
+    print("--- RESTRICCIÓN: PAYLOAD ENTRANTE DESDE META ---")
+    print(json.dumps(payload, indent=2))
     try:
         value = payload["entry"][0]["changes"][0]["value"]
         if "messages" in value:
