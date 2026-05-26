@@ -1,0 +1,13 @@
+{
+  "type": "service_account",
+  "project_id": "bot-dentista-497517",
+  "private_key_id": "11035b4a7c4c98ac0154f808bb963a0b9c989efc",
+  "private_key": "-----BEGIN PRIVATE KEY-----\nMIIEvgIBADANBgkqhkiG9w0BAQEFAASCBKgwggSkAgEAAoIBAQC1H3RIFNYssW+6\npkSek/Jqn+NYTpl6V6dSjtgfyH20Ll96U0f3g3qlTdnoao85PgGa4/h89F6C7U0G\ntL65/1c5I2mzPG4s3sIO1JPiDMnBIeV5eE3PHhpC82MCvKX+dL6uE4/UbMakftOO\njJ86c326gFED7Q5meU6kcOU3gy7MFGGifhqw3VXJjOkNccaeN//+2QXXRklLWGoq\nNDdgxT2sf7+HMKr25mw9QgR8FgcRvXQTBq8PAjlqIVif6/gwN32ohzzV98Sk08CO\nS3VBYzxPl4flnqkW5GQmF3femKilIMbvgXs8Dt3MLz4StUUnttTRb11e0ixUYZn3\n/sN37XGlAgMBAAECggEACxXX1QHkzNtMRQ51lIYQuBq9PEj35u9pR9SDIPOGprSQ\nNpP/y4PndFQUN5UZWyMdeoh5i35HsDg2tr0bukBeQIVCFsymn/Dp9s88a4FQXNVx\nWR1Ll9cAu6Maps7QfbHRVM/7hYBl1P4H097tROjPeQ7ERpr86WPYdBiOcuFrcmUy\nMMCO//MKarnpW27Ee6d1AFJiMs7NRvaeJI772aPnYFBNfiyNnTmXxr1bXFe1/YVA\no15Kd1niMfHq8puTUCZ+AXwHMkC8uzhm7z78x4W08u6NuNxtziET4MbFywhji8vP\n9nV4PZNw7HiwENvHPc0/T2BLAy561+LKDi4IRgfaMQKBgQDm4jk2AqgRn2IO18Qa\nC1CBuSWExy+B1ZXs4DtI8casaF/DCl/5PbUAmhdr4wO4zkrUw/fm4n+tPPwXkkAZ\ncdJ4MbjVpRBnTm2KrE6wfJpEUykB7V7V1v+ASr2yJJh5IAbI3JpiwHxwQ9ttWj12\n8yJpf8epAxX2G4oOpyGwDRR4EQKBgQDI03bIFlPgxQuUO3JKw7jgYJP9fAkCWhKP\nNkZdhpvU/AvqZSpxb4yXfT83FwsP0wdui6gzu8ExPp7cKywRvBJ6Ns4wf3gQNxn4\nGmbBiMwmq06YuoG4/kfeYfcicoteRkgwceWsaUZqHOlGsH1JtBKTEqprNptIZMPe\ngC1yuPxUVQKBgGXNgA5pk3PZxCHpT4VwUboxSfLG5RKpe6brpBhgywpAJ2FXlMPQ\nSpwOVZ9zhLOa+nHgStGaM1POnRVDnlHZ10S6H9bMJnR2p2RK35OADYFs7Zr08Cj3\n2MbXrdb7veNClNtCMiyy1Ounb/xCmvF0+UptVjsWqjtPH0ugtADtc4YRAoGBAMNj\nCgPtxTnAPF3B4JbhCbQ0Aofy74j8PWZcdeV0m5SCjM1GFB89WlnhH2nn33lL5cUl\n10ZN+85/kGvBDSVMB+YkAEOrIRMVqQx8E1FkWMuei9+IRcHIk//G7Hz1WKcmVgHc\nLoqp+jovWr7N43eb3R5+YJPjEv1CHFcT+iPN2qHpAoGBAJe/ZgCJ+swOoQf0ywQM\nPthWPdJeCj5DfLp2q+k09JlFW5ddiwC4vbMG/R4x6qZQLpOuCXrPNTqQjerEUuxM\npCVeKN2sjOFt1JXGsjQ9Zw+/fqIyJzxbIBcBzEVchO2lxhQlCNIA/iJZlEqIib83\nMWltW7EpjcdF9jTvCVffpwH4\n-----END PRIVATE KEY-----\n",
+  "client_email": "dentista@bot-dentista-497517.iam.gserviceaccount.com",
+  "client_id": "110197833557161499528",
+  "auth_uri": "https://accounts.google.com/o/oauth2/auth",
+  "token_uri": "https://oauth2.googleapis.com/token",
+  "auth_provider_x509_cert_url": "https://www.googleapis.com/oauth2/v1/certs",
+  "client_x509_cert_url": "https://www.googleapis.com/robot/v1/metadata/x509/dentista%40bot-dentista-497517.iam.gserviceaccount.com",
+  "universe_domain": "googleapis.com"
+}
