@@ -134,6 +134,9 @@ async def webhook(request: Request):
             
             elif estado == "AGENDADO":
                 await enviar_wpp(phone, "Ya tienes una cita agendada de forma activa.")
+            else:
+                print(f"⚠️ ALERTA: Se detectó un estado no controlado: '{estado}'")
+                await enviar_wpp(phone, "Hubo un desfase en el sistema. Escribe de nuevo para reiniciar.")
                 
         return {"status": "ok"}
     except Exception as e:
