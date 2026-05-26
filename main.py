@@ -32,7 +32,9 @@ SCOPES = ['https://www.googleapis.com/auth/calendar']
 calendar_service = None
 if GOOGLE_CREDS_RAW:
     try:
-        creds_info = json.loads(GOOGLE_CREDS_RAW)
+        creds_info = json.loads(GOOGLE_CREDS_JSON)
+        if "private_key" in creds_info:
+        creds_info["private_key"] = creds_info["private_key"].replace("\\n", "\n")
         creds = Credentials.from_service_account_info(creds_info, scopes=SCOPES)
         calendar_service = build('calendar', 'v3', credentials=creds)
     except Exception as e:
